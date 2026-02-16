@@ -33,6 +33,10 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Enable Google Cloud APIs
+        run: |
+          gcloud services enable serviceusage.googleapis.com cloudbuild.googleapis.com run.googleapis.com containerregistry.googleapis.com
+
       - name: Build and Push Container
         run: |
           gcloud builds submit --tag gcr.io/$PROJECT_ID/$APP_NAME
