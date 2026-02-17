@@ -1,0 +1,50 @@
+@media print {
+
+  /* Reset page */
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    background: #fff;
+  }
+
+  /* Hide everything by default */
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+
+  /* Ensure the preview container (which we want to print) is visible and formatted */
+  .print-only {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Reset any scroll or layout constraints on parents */
+  #root,
+  body,
+  html {
+    height: auto;
+    overflow: visible;
+  }
+
+  /* Reset the main app container styles for print */
+  #app-container {
+    background: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    color: black !important;
+  }
+}

@@ -1,16 +1,38 @@
-# React + Vite
+# Prospect 1-Pager App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+An interactive, AI-driven one-pager generator for DotKonnekt prospects.
 
-Currently, two official plugins are available:
+## 🚀 Quick Start
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 1. Development (Local)
+To run the app locally on your machine:
 
-## React Compiler
+```bash
+# Install dependencies (only needed once)
+npm install
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+# Start the dev server
+npm run dev
+```
+Then open `http://localhost:5173` in your browser.
 
-## Expanding the ESLint configuration
+### 2. Deployment (Cloud Run)
+The app deploys automatically when you push to the `main` branch.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+# Save your changes
+git add .
+git commit -m "Describe your changes"
+
+# Deploy to Google Cloud
+git push
+```
+Deployment typically takes 2-3 minutes. Check the "Actions" tab in GitHub for progress.
+
+## 🔑 Access
+See `TEAM_ACCESS.md` for the live URL and login credentials.
+
+## 🛠️ Tech Stack
+- React (Vite)
+- Cloud Run (Hosting)
+- GitHub Actions (CI/CD)

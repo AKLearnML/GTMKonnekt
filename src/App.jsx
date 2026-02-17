@@ -530,41 +530,11 @@ export default function App() {
     );
   }
 
-  const handleExportPDF = async () => {
-    if (!previewRef.current) return;
-    setIsExporting(true);
-
-    try {
-      const canvas = await html2canvas(previewRef.current, {
-        scale: 4, // High resolution
-        useCORS: true,
-        logging: false,
-      });
-
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "pt",
-        format: "a4",
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-
-      const imgX = (pdfWidth - imgWidth * ratio) / 2;
-      const imgY = 0; // Top align for one-pagers
-
-      pdf.addImage(imgData, "PNG", imgX, imgY, imgWidth * ratio, imgHeight * ratio);
-      pdf.save(`${config.prospectName || "prospect"}-one-pager.pdf`);
-    } catch (error) {
-      console.error("Failed to export PDF", error);
-      alert("Failed to export PDF. Check console for details.");
-    } finally {
-      setIsExporting(false);
-    }
+  const handleExportPDF = () => {
+    const originalTitle = document.title;
+    document.title = `${config.prospectName || "prospect"}-one-pager`;
+    window.print();
+    document.title = originalTitle;
   };
 
   const update = (path, value) => {
@@ -649,11 +619,11 @@ export default function App() {
   ];
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", background: "#0F0F0F", minHeight: "100vh", color: "#e0e0e0" }}>
+    <div id="app-container" style={{ fontFamily: "'DM Sans', sans-serif", background: "#0F0F0F", minHeight: "100vh", color: "#e0e0e0" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
       {/* Nav */}
-      <div style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(15,15,15,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(201,168,76,0.15)", padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+      <div className="no-print" style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(15,15,15,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(201,168,76,0.15)", padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <img src={DK_LOGO_DARK} alt="DK" style={{ height: 22 }} />
           <div>
@@ -673,8 +643,8 @@ export default function App() {
           <button onClick={() => setPanelOpen(!panelOpen)} style={{ padding: "7px 14px", borderRadius: 6, fontSize: 11, fontWeight: 500, cursor: "pointer", border: "1px solid #333", fontFamily: "'DM Sans', sans-serif", background: panelOpen ? "rgba(201,168,76,0.1)" : "transparent", color: panelOpen ? "#C9A84C" : "#777" }}>
             {panelOpen ? "Hide Editor" : "Edit Content"}
           </button>
-          <button onClick={handleExportPDF} disabled={isExporting} style={{ padding: "7px 14px", borderRadius: 6, fontSize: 11, fontWeight: 500, cursor: isExporting ? "not-allowed" : "pointer", border: "1px solid #C9A84C", fontFamily: "'DM Sans', sans-serif", background: "#C9A84C", color: "#1A1A1A", opacity: isExporting ? 0.7 : 1 }}>
-            {isExporting ? "Exporting..." : "Export PDF"}
+          <button onClick={handleExportPDF} style={{ padding: "7px 14px", borderRadius: 6, fontSize: 11, fontWeight: 500, cursor: "pointer", border: "1px solid #C9A84C", fontFamily: "'DM Sans', sans-serif", background: "#C9A84C", color: "#1A1A1A" }}>
+            Export PDF
           </button>
         </div>
       </div>
@@ -682,7 +652,7 @@ export default function App() {
       <div style={{ display: "flex" }}>
         {/* Config Panel */}
         {panelOpen && (
-          <div style={{ width: 320, flexShrink: 0, background: "#0a0a0a", borderRight: "1px solid #1a1a1a", height: "calc(100vh - 52px)", overflowY: "auto", position: "sticky", top: 52 }}>
+          <div className="no-print" style={{ width: 320, flexShrink: 0, background: "#0a0a0a", borderRight: "1px solid #1a1a1a", height: "calc(100vh - 52px)", overflowY: "auto", position: "sticky", top: 52 }}>
             <div style={{ padding: "12px 14px", borderBottom: "1px solid #1a1a1a", display: "flex", gap: 6 }}>
               <button onClick={() => setConfig(DEFAULT_CONFIG)} style={{ flex: 1, padding: "6px 8px", borderRadius: 6, border: "1px solid #333", background: "transparent", color: "#C9A84C", fontSize: 10, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>Load FACES</button>
               <button onClick={() => setConfig(EMPTY_CONFIG)} style={{ flex: 1, padding: "6px 8px", borderRadius: 6, border: "1px solid #333", background: "transparent", color: "#777", fontSize: 10, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>Start Blank</button>
@@ -702,7 +672,7 @@ export default function App() {
 
         {/* Preview */}
         <div style={{ flex: 1, display: "flex", justifyContent: "center", padding: "28px 16px 60px", overflowY: "auto" }}>
-          <div ref={previewRef} style={{ width: 816, boxShadow: "0 30px 80px rgba(0,0,0,0.5)", borderRadius: 4, overflow: "hidden" }}>
+          <div ref={previewRef} className="print-only" style={{ width: 816, boxShadow: "0 30px 80px rgba(0,0,0,0.5)", borderRadius: 4, overflow: "hidden" }}>
             {activeLayout === "a" && <LayoutA c={config} />}
             {activeLayout === "b" && <LayoutB c={config} />}
             {activeLayout === "c" && <LayoutC c={config} />}
