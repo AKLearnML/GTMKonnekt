@@ -282,87 +282,90 @@ const LayoutB = ({ c }) => {
   const name = c.prospectName || "[Prospect]";
   const hl = r(c.headline, name);
   return (
-    <div style={{ fontFamily: "'Sora', sans-serif", minHeight: 1056, background: "#fff" }}>
-      {/* Dark Hero */}
-      <div style={{ background: "#1A1A1A", color: "#fff", padding: "26px 36px 22px", position: "relative", overflow: "hidden" }}>
-        <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, background: "radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%)", borderRadius: "50%" }} />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, position: "relative", zIndex: 1 }}>
-          <DKLogoDark height={36} />
-          <div style={{ background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 20, padding: "4px 13px", fontSize: 9, color: "#C9A84C", letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 500 }}>
-            Confidential
-          </div>
-        </div>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 800, lineHeight: 1.15, position: "relative", zIndex: 1, margin: 0 }}>
-          <HighlightName text={hl} name={name} />
-        </h1>
-        <p style={{ fontSize: 12, color: "#999", marginTop: 8, position: "relative", zIndex: 1 }}>{r(c.subtitle, name)}</p>
-      </div>
-
-      {/* Strategy Row */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: "1px solid #E8E4DD" }}>
-        {[c.pillar1, c.pillar2].map((p, pi) => (
-          <div key={pi} style={{ padding: "20px 24px", borderRight: pi === 0 ? "1px solid #E8E4DD" : "none" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-              <div style={{ width: 26, height: 26, background: "#C9A84C", color: "#1A1A1A", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700 }}>{pi + 1}</div>
-              <h3 style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A", margin: 0 }}>{p.title || `[Strategic Pillar ${pi + 1}]`}</h3>
+    <div style={{ fontFamily: "'Sora', sans-serif", minHeight: 1056, background: "#fff", display: "flex", flexDirection: "column" }}>
+      <div>
+        {/* Dark Hero */}
+        <div style={{ background: "#1A1A1A", color: "#fff", padding: "20px 32px 18px", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, background: "radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%)", borderRadius: "50%" }} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, position: "relative", zIndex: 1 }}>
+            <DKLogoDark height={36} />
+            <div style={{ background: "rgba(201,168,76,0.15)", border: "1px solid rgba(201,168,76,0.3)", borderRadius: 20, padding: "4px 13px", fontSize: 9, color: "#C9A84C", letterSpacing: 1.5, textTransform: "uppercase", fontWeight: 500 }}>
+              Confidential
             </div>
-            {p.items.map((item, ii) => (
-              <div key={ii} style={{ background: "#F8F6F2", borderRadius: 8, padding: "11px 14px", marginBottom: ii < p.items.length - 1 ? 9 : 0 }}>
-                <h4 style={{ fontSize: 11, fontWeight: 600, color: "#1A1A1A", margin: "0 0 3px" }}>{item.name || "[Capability]"}</h4>
-                <p style={{ fontSize: 10.5, color: "#888", lineHeight: 1.5, margin: 0 }}>{item.desc || "Description of value delivered."}</p>
-              </div>
-            ))}
           </div>
-        ))}
-      </div>
+          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 800, lineHeight: 1.15, position: "relative", zIndex: 1, margin: 0 }}>
+            <HighlightName text={hl} name={name} />
+          </h1>
+          <p style={{ fontSize: 12, color: "#999", marginTop: 8, position: "relative", zIndex: 1 }}>{r(c.subtitle, name)}</p>
+        </div>
 
-      {/* Value Strip */}
-      <div style={{ background: "#F8F6F2", padding: "18px 24px", borderBottom: "1px solid #E8E4DD" }}>
-        <div style={{ fontFamily: "monospace", fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: 2, color: "#C9A84C", marginBottom: 12 }}>How DotKonnekt Delivers</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-          {c.valueProps.map((vp, i) => (
-            <div key={i} style={{ background: "#fff", borderRadius: 8, padding: "13px 13px 13px 17px", border: "1px solid #E8E4DD", position: "relative" }}>
-              <div style={{ position: "absolute", top: 10, left: 0, width: 3, height: 22, background: "#C9A84C", borderRadius: "0 4px 4px 0" }} />
-              <h4 style={{ fontSize: 11, fontWeight: 600, color: "#1A1A1A", margin: "0 0 4px" }}>{vp.title || "[Value Prop]"}</h4>
-              <p style={{ fontSize: 10.5, color: "#888", lineHeight: 1.5, margin: 0 }}>{vp.desc || "Description of delivery approach."}</p>
+        {/* Strategy Row */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: "1px solid #E8E4DD" }}>
+          {[c.pillar1, c.pillar2].map((p, pi) => (
+            <div key={pi} style={{ padding: "16px 24px", borderRight: pi === 0 ? "1px solid #E8E4DD" : "none" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <div style={{ width: 26, height: 26, background: "#C9A84C", color: "#1A1A1A", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700 }}>{pi + 1}</div>
+                <h3 style={{ fontSize: 13, fontWeight: 700, color: "#1A1A1A", margin: 0 }}>{p.title || `[Strategic Pillar ${pi + 1}]`}</h3>
+              </div>
+              {p.items.map((item, ii) => (
+                <div key={ii} style={{ background: "#F8F6F2", borderRadius: 8, padding: "8px 12px", marginBottom: ii < p.items.length - 1 ? 8 : 0 }}>
+                  <h4 style={{ fontSize: 11, fontWeight: 600, color: "#1A1A1A", margin: "0 0 3px" }}>{item.name || "[Capability]"}</h4>
+                  <p style={{ fontSize: 10.5, color: "#888", lineHeight: 1.5, margin: 0 }}>{item.desc || "Description of value delivered."}</p>
+                </div>
+              ))}
             </div>
           ))}
         </div>
-      </div>
 
-      {/* Bottom */}
-      <div style={{ padding: "16px 24px" }}>
-        <div style={{ background: "#1A1A1A", borderRadius: 10, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <div style={{ width: 32, height: 32, background: "#C9A84C", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0, fontWeight: 700 }}>→</div>
-          <div>
-            <h4 style={{ fontSize: 12, fontWeight: 600, color: "#fff", margin: 0 }}>{c.cta.title}</h4>
-            <p style={{ fontSize: 10.5, color: "#999", margin: "2px 0 0" }}>{r(c.cta.desc, name)}</p>
+        {/* Value Strip */}
+        <div style={{ background: "#F8F6F2", padding: "16px 24px 24px", borderBottom: "1px solid #E8E4DD" }}>
+          <div style={{ fontFamily: "monospace", fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: 2, color: "#C9A84C", marginBottom: 10 }}>How DotKonnekt Delivers</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+            {c.valueProps.map((vp, i) => (
+              <div key={i} style={{ background: "#fff", borderRadius: 8, padding: "10px 12px 10px 15px", border: "1px solid #E8E4DD", position: "relative" }}>
+                <div style={{ position: "absolute", top: 10, left: 0, width: 3, height: 22, background: "#C9A84C", borderRadius: "0 4px 4px 0" }} />
+                <h4 style={{ fontSize: 11, fontWeight: 600, color: "#1A1A1A", margin: "0 0 4px" }}>{vp.title || "[Value Prop]"}</h4>
+                <p style={{ fontSize: 10.5, color: "#888", lineHeight: 1.5, margin: 0 }}>{vp.desc || "Description of delivery approach."}</p>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div style={{ borderTop: "1px solid #E8E4DD", paddingTop: 12 }}>
-          <div style={{ fontFamily: "monospace", fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: 2, color: "#C9A84C", marginBottom: 8, textAlign: "center" }}>Our Offering</div>
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <KompassArchitecture width={480} />
-          </div>
-          <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 6 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "5px 10px", background: "#F8F6F2", borderRadius: 6 }}>
-              <ConstellationBadge compact />
-              <span style={{ fontSize: 9, color: "#555", fontWeight: 500 }}>AI-First Firm — Constellation Research</span>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "5px 10px", background: "#F8F6F2", borderRadius: 6 }}>
-              <span style={{ fontSize: 11, color: "#C9A84C" }}>♛</span>
-              <span style={{ fontSize: 9, color: "#555", fontWeight: 500 }}>{c.clients}</span>
+        {/* Bottom CTA (Gold Style from Screenshot) */}
+        <div style={{ padding: "12px 24px 0" }}>
+          <div style={{ background: "#C9A84C", borderRadius: 10, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+            <div style={{ width: 32, height: 32, background: "rgba(26,26,26,0.2)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0, fontWeight: 700, color: "#1A1A1A" }}>→</div>
+            <div>
+              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#1A1A1A", margin: 0 }}>{c.cta.title}</h4>
+              <p style={{ fontSize: 10.5, color: "#1A1A1A", margin: "2px 0 0", opacity: 0.8 }}>{r(c.cta.desc, name)}</p>
             </div>
           </div>
         </div>
+      </div>
 
-        <div style={{ marginTop: 12, paddingTop: 8, borderTop: "1px solid #E8E4DD", display: "flex", justifyContent: "space-between", fontFamily: "monospace", fontSize: 7.5, color: "#bbb", letterSpacing: 1 }}>
-          <span>© DOTKONNEKT CONFIDENTIAL & PROPRIETARY</span>
-          <span>DOTKONNEKT.COM</span>
+      {/* Footer — DotKonnekt Offering (From Layout A) */}
+      <div style={{ padding: "16px 40px 12px", borderTop: "1px solid #EEEAE4", marginTop: 0 }}>
+        <div style={{ fontFamily: "monospace", fontSize: 8.5, letterSpacing: 2, textTransform: "uppercase", color: "#C9A84C", marginBottom: 8, fontWeight: 600, textAlign: "center" }}>Our Offering</div>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <KompassArchitecture width={500} />
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, background: "#F7F5F0", borderRadius: 6, padding: "5px 10px" }}>
+            <ConstellationBadge compact />
+            <span style={{ fontSize: 9, color: "#555", fontWeight: 500 }}>AI-First Firm — Constellation Research</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, background: "#F7F5F0", borderRadius: 6, padding: "5px 10px" }}>
+            <span style={{ fontSize: 11, color: "#C9A84C" }}>♛</span>
+            <span style={{ fontSize: 9, color: "#555", fontWeight: 500 }}>{c.clients}</span>
+          </div>
         </div>
       </div>
-    </div>
+
+      <div style={{ background: "#1A1A1A", padding: "7px 40px", display: "flex", justifyContent: "space-between", fontFamily: "monospace", fontSize: 7.5, color: "#666", letterSpacing: 1 }}>
+        <span>© DOTKONNEKT CONFIDENTIAL & PROPRIETARY</span>
+        <span>DOTKONNEKT.COM</span>
+      </div>
+    </div >
   );
 };
 
@@ -377,13 +380,13 @@ const LayoutC = ({ c }) => {
       <div style={{ position: "absolute", top: 0, left: 0, width: 7, height: "100%", background: "linear-gradient(180deg, #C9A84C 0%, #E8D5A0 40%, #E8E4DD 100%)" }} />
 
       {/* Header */}
-      <div style={{ padding: "24px 40px 16px 48px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div style={{ padding: "32px 40px 20px 48px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <DKLogoLight height={34} />
         <div style={{ fontFamily: "monospace", fontSize: 8, color: "#bbb", letterSpacing: 1.5, textTransform: "uppercase" }}>Confidential & Proprietary</div>
       </div>
 
       {/* Hero */}
-      <div style={{ padding: "0 40px 20px 48px" }}>
+      <div style={{ padding: "0 40px 32px 48px" }}>
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 36, lineHeight: 1.1, color: "#1A1A1A", fontWeight: 700, margin: 0, maxWidth: 560 }}>
           <HighlightName text={hl} name={name} italic />
         </h1>
@@ -396,7 +399,7 @@ const LayoutC = ({ c }) => {
       </div>
 
       {/* Strategy Grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "20px 40px 16px 48px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", padding: "28px 40px 24px 48px" }}>
         {[c.pillar1, c.pillar2].map((p, pi) => (
           <div key={pi} style={{ padding: pi === 0 ? "0 18px 0 0" : "0 0 0 18px", borderLeft: pi === 1 ? "1px solid #E8E4DD" : "none" }}>
             <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, color: "#1A1A1A", marginBottom: 12, display: "flex", alignItems: "center", gap: 9 }}>
@@ -419,7 +422,7 @@ const LayoutC = ({ c }) => {
       </div>
 
       {/* Approach Cards */}
-      <div style={{ padding: "18px 40px 14px 48px" }}>
+      <div style={{ padding: "24px 40px 20px 48px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
           {c.valueProps.map((vp, i) => (
             <div key={i} style={{ border: "1px solid #E8E4DD", borderRadius: 10, padding: "14px 13px" }}>
@@ -432,7 +435,7 @@ const LayoutC = ({ c }) => {
       </div>
 
       {/* CTA */}
-      <div style={{ margin: "2px 40px 12px 48px", display: "flex", alignItems: "center", gap: 14, padding: "13px 18px", border: "2px solid #C9A84C", borderRadius: 10, background: "rgba(201,168,76,0.03)" }}>
+      <div style={{ margin: "10px 40px 32px 48px", display: "flex", alignItems: "center", gap: 14, padding: "16px 22px", border: "2px solid #C9A84C", borderRadius: 10, background: "rgba(201,168,76,0.03)" }}>
         <div style={{ width: 26, height: 26, background: "#C9A84C", transform: "rotate(45deg)", borderRadius: 3, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <span style={{ transform: "rotate(-45deg)", fontSize: 12, color: "#1A1A1A", fontWeight: 700 }}>→</span>
         </div>
@@ -531,10 +534,15 @@ export default function App() {
   }
 
   const handleExportPDF = () => {
-    const originalTitle = document.title;
-    document.title = `${config.prospectName || "prospect"}-one-pager`;
-    window.print();
-    document.title = originalTitle;
+    setIsExporting(true);
+    // Allow React to render the scaled state before printing
+    setTimeout(() => {
+      const originalTitle = document.title;
+      document.title = `${config.prospectName || "prospect"}-one-pager`;
+      window.print();
+      document.title = originalTitle;
+      setIsExporting(false);
+    }, 100);
   };
 
   const update = (path, value) => {
@@ -672,7 +680,14 @@ export default function App() {
 
         {/* Preview */}
         <div style={{ flex: 1, display: "flex", justifyContent: "center", padding: "28px 16px 60px", overflowY: "auto" }}>
-          <div ref={previewRef} className="print-only" style={{ width: 816, boxShadow: "0 30px 80px rgba(0,0,0,0.5)", borderRadius: 4, overflow: "hidden" }}>
+          <div ref={previewRef} className="print-only" style={{
+            width: isExporting ? "722px" : 816, // Balanced width
+            transform: isExporting ? "scale(1.10)" : "none", // Scale up by 10%
+            transformOrigin: "top left",
+            boxShadow: isExporting ? "none" : "0 30px 80px rgba(0,0,0,0.5)",
+            borderRadius: isExporting ? 0 : 4,
+            overflow: "hidden"
+          }}>
             {activeLayout === "a" && <LayoutA c={config} />}
             {activeLayout === "b" && <LayoutB c={config} />}
             {activeLayout === "c" && <LayoutC c={config} />}
