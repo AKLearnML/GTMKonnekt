@@ -32,6 +32,7 @@ const DEFAULT_CONFIG = {
   ],
   cta: { title: "Next Step: 30-Minute Executive Briefing", desc: "Explore high-impact use cases and partnership options tailored for {prospect}." },
   clients: "David's Bridal · Wrangler · Lee · Dockers",
+  offeringImage: null,
 };
 
 const EMPTY_CONFIG = {
@@ -47,6 +48,7 @@ const EMPTY_CONFIG = {
   ],
   cta: { title: "Next Step: 30-Minute Executive Briefing", desc: "Explore high-impact use cases and partnership options." },
   clients: "David's Bridal · Wrangler · Lee · Dockers",
+  offeringImage: null,
 };
 
 // ── Logo Components ──
@@ -253,7 +255,11 @@ const LayoutA = ({ c }) => {
       <div style={{ padding: "10px 40px 6px", borderTop: "1px solid #EEEAE4" }}>
         <div style={{ fontFamily: "monospace", fontSize: 8.5, letterSpacing: 2, textTransform: "uppercase", color: "#C9A84C", marginBottom: 8, fontWeight: 600, textAlign: "center" }}>Our Offering</div>
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <KompassArchitecture width={500} />
+          {c.offeringImage ? (
+            <img src={c.offeringImage} alt="Our Offering" style={{ width: 500, maxWidth: "100%", height: "auto", display: "block", borderRadius: 8 }} />
+          ) : (
+            <KompassArchitecture width={500} />
+          )}
         </div>
         <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 6 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 7, background: "#F7F5F0", borderRadius: 6, padding: "5px 10px" }}>
@@ -347,7 +353,11 @@ const LayoutB = ({ c }) => {
       <div style={{ padding: "16px 40px 12px", borderTop: "1px solid #EEEAE4", marginTop: 0 }}>
         <div style={{ fontFamily: "monospace", fontSize: 8.5, letterSpacing: 2, textTransform: "uppercase", color: "#C9A84C", marginBottom: 8, fontWeight: 600, textAlign: "center" }}>Our Offering</div>
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <KompassArchitecture width={500} />
+          {c.offeringImage ? (
+            <img src={c.offeringImage} alt="Our Offering" style={{ width: 500, maxWidth: "100%", height: "auto", display: "block", borderRadius: 8 }} />
+          ) : (
+            <KompassArchitecture width={500} />
+          )}
         </div>
         <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 6 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 7, background: "#F7F5F0", borderRadius: 6, padding: "5px 10px" }}>
@@ -448,7 +458,11 @@ const LayoutC = ({ c }) => {
       {/* Footer */}
       <div style={{ padding: "10px 40px 8px 48px", borderTop: "1px solid #E8E4DD" }}>
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <KompassArchitecture width={460} />
+          {c.offeringImage ? (
+            <img src={c.offeringImage} alt="Our Offering" style={{ width: 460, maxWidth: "100%", height: "auto", display: "block", borderRadius: 8 }} />
+          ) : (
+            <KompassArchitecture width={460} />
+          )}
         </div>
         <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 4 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#F8F6F2", borderRadius: 4, padding: "5px 10px", fontSize: 9, color: "#555", fontWeight: 500 }}>
@@ -605,6 +619,37 @@ export default function App() {
       </div>
     );
 
+    if (configTab === "offering") return (
+      <div>
+        <div style={S.group}>
+          <label style={S.label}>Our Offering Image</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (file) {
+                const reader = new FileReader();
+                reader.onloadend = () => update("offeringImage", reader.result);
+                reader.readAsDataURL(file);
+              }
+            }}
+            style={{ ...S.input, padding: "8px 0" }}
+          />
+          <div style={{ fontSize: 9, color: "#888", marginTop: 6, lineHeight: 1.4 }}>
+            Upload an image to replace the default architecture diagram.<br />
+            <strong>Recommended size:</strong> 1000 x 520px (or similar ~1.9:1 aspect ratio)
+          </div>
+          {config.offeringImage && (
+            <div style={{ marginTop: 12 }}>
+              <img src={config.offeringImage} alt="Offering preview" style={{ maxWidth: "100%", borderRadius: 4, display: "block", border: "1px solid #333" }} />
+              <button onClick={() => update("offeringImage", null)} style={{ marginTop: 8, background: "transparent", color: "#C9A84C", border: "1px solid #333", borderRadius: 4, padding: "6px 10px", fontSize: 10, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>Remove Image</button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+
     return (
       <div>
         <div style={S.group}><label style={S.label}>CTA Title</label><input style={S.input} value={config.cta.title} onChange={e => update("cta.title", e.target.value)} /></div>
@@ -624,6 +669,7 @@ export default function App() {
     { id: "pillars", label: "Pillars" },
     { id: "value", label: "Value Props" },
     { id: "cta", label: "CTA" },
+    { id: "offering", label: "Offering" },
   ];
 
   return (
