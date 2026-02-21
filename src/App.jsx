@@ -33,6 +33,15 @@ const DEFAULT_CONFIG = {
   cta: { title: "Next Step: 30-Minute Executive Briefing", desc: "Explore high-impact use cases and partnership options tailored for {prospect}." },
   clients: "David's Bridal · Wrangler · Lee · Dockers",
   offeringImage: null,
+  offeringTitle: "Our Offering",
+  offeringMode: "image", // "image", "html", "blocks"
+  offeringBlocks: [
+    { heading: "Automated Workflows", text: "Streamline daily operations with intelligent system triggers." },
+    { heading: "Advanced Analytics", text: "Gain clear visibility into team and system performance." },
+    { heading: "Seamless Integration", text: "Connect easily with your existing software ecosystem." },
+    { heading: "Enterprise Security", text: "Protect sensitive data with SOC2 compliant infrastructure." }
+  ],
+  applyDKColors: false,
 };
 
 const EMPTY_CONFIG = {
@@ -49,6 +58,15 @@ const EMPTY_CONFIG = {
   cta: { title: "Next Step: 30-Minute Executive Briefing", desc: "Explore high-impact use cases and partnership options." },
   clients: "David's Bridal · Wrangler · Lee · Dockers",
   offeringImage: null,
+  offeringTitle: "Our Offering",
+  offeringMode: "image", // "image", "html", "blocks"
+  offeringBlocks: [
+    { heading: "", text: "" },
+    { heading: "", text: "" },
+    { heading: "", text: "" },
+    { heading: "", text: "" }
+  ],
+  applyDKColors: false,
 };
 
 // ── Logo Components ──
@@ -167,11 +185,135 @@ const KompassArchitecture = ({ width = 420 }) => {
 const r = (text, name) => text.replace(/\{prospect\}/g, name || "[Prospect]");
 
 const HighlightName = ({ text, name, color = "#C9A84C", italic = false }) => {
-  const parts = text.split(name);
-  return parts.reduce((acc, part, i, arr) => {
-    if (i < arr.length - 1) return [...acc, part, <span key={i} style={{ color, fontStyle: italic ? "italic" : "normal" }}>{name}</span>];
-    return [...acc, part];
-  }, []);
+  const parts = text.split(new RegExp(`(${name})`, "gi"));
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === name.toLowerCase() ? (
+          <span key={i} style={{ color, fontStyle: italic ? "italic" : "normal" }}>{part}</span>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+};
+
+// ── Text Blocks Offering Component ──
+const OfferingTextBlocks = ({ c, width = "100%", darkMode = false }) => {
+  return (
+    <div style={{ width, maxWidth: "100%", aspectRatio: "1000 / 400", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+      {c.offeringBlocks.map((b, i) => (
+        <div key={i} style={{
+          background: darkMode ? "#1A1A1A" : "#FAFAF8",
+          border: darkMode ? "1px solid #333" : "1px solid #E8E4DD",
+          borderLeft: "3px solid #C9A84C",
+          borderRadius: 8,
+          padding: "12px",
+          textAlign: "left"
+        }}>
+          <h4 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 10px", color: darkMode ? "#fff" : "#1A1A1A" }}>{b.heading || `[Block ${i + 1} Heading]`}</h4>
+          <p style={{ fontSize: 11.5, color: darkMode ? "#B0B0B0" : "#777", lineHeight: 1.6, margin: 0, whiteSpace: "pre-wrap" }}>
+            {b.text}
+          </p>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ── Image Processing & HTML Generation ──
+const processImageToHTML = (imageDataUrl, applyColors, callback) => {
+  if (!imageDataUrl) return callback(null, null);
+
+  // If the user uploads an SVG, we can inject it as raw, full-fidelity scalable HTML!
+  if (imageDataUrl.startsWith("data:image/svg+xml")) {
+    try {
+      // Extract the base64 payload or URL encoded payload
+      let svgText = "";
+      if (imageDataUrl.includes("base64,")) {
+        svgText = atob(imageDataUrl.split("base64,")[1]);
+      } else {
+        svgText = decodeURIComponent(imageDataUrl.split(",")[1]);
+      }
+
+      // If applyColors is true, we can do a basic recolor of stroke/fill in the SVG
+      if (applyColors) {
+        svgText = svgText.replace(/fill="([^"]+)"/ig, (match, color) => {
+          if (color.toLowerCase() === "none" || color.toLowerCase() === "transparent" || color.toLowerCase() === "#ffffff" || color.toLowerCase() === "white") return match;
+          return `fill="#C9A84C"`; // Map solid fills to Gold
+        });
+        svgText = svgText.replace(/stroke="([^"]+)"/ig, (match, color) => {
+          if (color.toLowerCase() === "none" || color.toLowerCase() === "transparent" || color.toLowerCase() === "#ffffff" || color.toLowerCase() === "white") return match;
+          return `stroke="#202021"`; // Map text/strokes to Dark
+        });
+        svgText = svgText.replace('<svg ', '<svg style="color: #202021;" ');
+      }
+
+      return callback(imageDataUrl, `<div style="width:100%; height:auto;">${svgText}</div>`);
+    } catch (e) {
+      console.warn("Could not parse SVG cleanly, falling back.", e);
+    }
+  }
+
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+
+    // DotKonnekt Palette
+    const palette = [
+      { r: 19, g: 19, b: 20 },   // Black #131314
+      { r: 32, g: 32, b: 33 },   // Light #202021
+      { r: 228, g: 182, b: 77 }  // Gold #E4B64D
+    ];
+
+    if (applyColors) {
+      for (let i = 0; i < data.length; i += 4) {
+        let r = data[i];
+        let g = data[i + 1];
+        let b = data[i + 2];
+        let a = data[i + 3];
+
+        // Ensure background is transparent (strip white, near-white, light gray, pale beige)
+        if (a < 20 || (r > 200 && g > 200 && b > 190)) {
+          data[i + 3] = 0;
+          continue;
+        }
+
+        // To prevent text antialiasing distortion (blocky, bold, blurry text edge pixels), 
+        // we leave lighter intermediate pixels (gray text smoothing borders) alone, 
+        // OR we map them but scale their opacity so they blend properly instead of sticking out.
+        // We will just leave light-mid tones alone to preserve the original anti-aliasing.
+        if (r > 150 && g > 150 && b > 150) {
+          continue;
+        }
+
+        let minDist = Infinity;
+        let closest = palette[0];
+        for (const color of palette) {
+          const dist = Math.sqrt(Math.pow(r - color.r, 2) + Math.pow(g - color.g, 2) + Math.pow(b - color.b, 2));
+          if (dist < minDist) { minDist = dist; closest = color; }
+        }
+
+        data[i] = closest.r;
+        data[i + 1] = closest.g;
+        data[i + 2] = closest.b;
+      }
+      ctx.putImageData(imageData, 0, 0);
+    }
+
+    const processedUrl = canvas.toDataURL("image/png");
+    const htmlSnippet = `<img src="${processedUrl}" alt="Offering" style="max-width: 100%; height: auto; display: block;" />`;
+
+    callback(processedUrl, htmlSnippet);
+  };
+  img.src = imageDataUrl;
 };
 
 // ════════════════════════════════════════════
@@ -253,9 +395,13 @@ const LayoutA = ({ c }) => {
 
       {/* Footer — DotKonnekt Offering */}
       <div style={{ padding: "10px 40px 6px", borderTop: "1px solid #EEEAE4" }}>
-        <div style={{ fontFamily: "monospace", fontSize: 8.5, letterSpacing: 2, textTransform: "uppercase", color: "#C9A84C", marginBottom: 8, fontWeight: 600, textAlign: "center" }}>Our Offering</div>
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          {c.offeringImage ? (
+        <div style={{ fontFamily: "monospace", fontSize: 15, letterSpacing: 2, textTransform: "uppercase", color: "#C9A84C", marginBottom: 8, fontWeight: 600, textAlign: "center" }}>{c.offeringTitle || "Our Offering"}</div>
+        <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+          {c.offeringMode === "blocks" ? (
+            <OfferingTextBlocks c={c} width="100%" />
+          ) : c.offeringMode === "html" && c.offeringHtml ? (
+            <div dangerouslySetInnerHTML={{ __html: c.offeringHtml }} style={{ width: 500, maxWidth: "100%", height: "auto", display: "flex", justifyContent: "center" }} />
+          ) : c.offeringMode === "image" && c.offeringImage ? (
             <img src={c.offeringImage} alt="Our Offering" style={{ width: 500, maxWidth: "100%", height: "auto", display: "block", borderRadius: 8 }} />
           ) : (
             <KompassArchitecture width={500} />
@@ -351,9 +497,13 @@ const LayoutB = ({ c }) => {
 
       {/* Footer — DotKonnekt Offering (From Layout A) */}
       <div style={{ padding: "16px 40px 12px", borderTop: "1px solid #EEEAE4", marginTop: 0 }}>
-        <div style={{ fontFamily: "monospace", fontSize: 8.5, letterSpacing: 2, textTransform: "uppercase", color: "#C9A84C", marginBottom: 8, fontWeight: 600, textAlign: "center" }}>Our Offering</div>
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          {c.offeringImage ? (
+        <div style={{ fontFamily: "monospace", fontSize: 15, letterSpacing: 2, textTransform: "uppercase", color: "#C9A84C", marginBottom: 8, fontWeight: 600, textAlign: "center" }}>{c.offeringTitle || "Our Offering"}</div>
+        <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+          {c.offeringMode === "blocks" ? (
+            <OfferingTextBlocks c={c} width="100%" />
+          ) : c.offeringMode === "html" && c.offeringHtml ? (
+            <div dangerouslySetInnerHTML={{ __html: c.offeringHtml }} style={{ width: 500, maxWidth: "100%", height: "auto", display: "flex", justifyContent: "center" }} />
+          ) : c.offeringMode === "image" && c.offeringImage ? (
             <img src={c.offeringImage} alt="Our Offering" style={{ width: 500, maxWidth: "100%", height: "auto", display: "block", borderRadius: 8 }} />
           ) : (
             <KompassArchitecture width={500} />
@@ -457,8 +607,13 @@ const LayoutC = ({ c }) => {
 
       {/* Footer */}
       <div style={{ padding: "10px 40px 8px 48px", borderTop: "1px solid #E8E4DD" }}>
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          {c.offeringImage ? (
+        <div style={{ fontFamily: "monospace", fontSize: 15, letterSpacing: 2, textTransform: "uppercase", color: "#C9A84C", marginBottom: 8, fontWeight: 600, textAlign: "center" }}>{c.offeringTitle || "Our Offering"}</div>
+        <div style={{ display: "flex", justifyContent: "center", width: "100%" }}>
+          {c.offeringMode === "blocks" ? (
+            <OfferingTextBlocks c={c} width="100%" />
+          ) : c.offeringMode === "html" && c.offeringHtml ? (
+            <div dangerouslySetInnerHTML={{ __html: c.offeringHtml }} style={{ width: 500, maxWidth: "100%", height: "auto", display: "flex", justifyContent: "center" }} />
+          ) : c.offeringMode === "image" && c.offeringImage ? (
             <img src={c.offeringImage} alt="Our Offering" style={{ width: 460, maxWidth: "100%", height: "auto", display: "block", borderRadius: 8 }} />
           ) : (
             <KompassArchitecture width={460} />
@@ -549,14 +704,16 @@ export default function App() {
 
   const handleExportPDF = () => {
     setIsExporting(true);
-    // Allow React to render the scaled state before printing
+    // Allow React to completely render the scaled state and decode any base64 images
     setTimeout(() => {
       const originalTitle = document.title;
-      document.title = `${config.prospectName || "prospect"}-one-pager`;
+      // Add a timestamp to the title so the downloaded file is unique and avoids macOS/browser PDF caching
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      document.title = `${config.prospectName || "prospect"}-one-pager-${timestamp}`;
       window.print();
       document.title = originalTitle;
       setIsExporting(false);
-    }, 100);
+    }, 600);
   };
 
   const update = (path, value) => {
@@ -621,29 +778,113 @@ export default function App() {
 
     if (configTab === "offering") return (
       <div>
+        <div style={S.group}><label style={S.label}>Offering Title</label><input style={S.input} value={config.offeringTitle} onChange={e => update("offeringTitle", e.target.value)} /></div>
+
         <div style={S.group}>
-          <label style={S.label}>Our Offering Image</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => {
-              const file = e.target.files[0];
-              if (file) {
-                const reader = new FileReader();
-                reader.onloadend = () => update("offeringImage", reader.result);
-                reader.readAsDataURL(file);
-              }
-            }}
-            style={{ ...S.input, padding: "8px 0" }}
-          />
-          <div style={{ fontSize: 9, color: "#888", marginTop: 6, lineHeight: 1.4 }}>
-            Upload an image to replace the default architecture diagram.<br />
-            <strong>Recommended size:</strong> 1000 x 520px (or similar ~1.9:1 aspect ratio)
+          <label style={S.label}>Offering Format</label>
+          <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+            {[{ id: "image", label: "Image" }, { id: "html", label: "Custom HTML" }, { id: "blocks", label: "Text Blocks" }].map(m => (
+              <button
+                key={m.id}
+                onClick={() => update("offeringMode", m.id)}
+                style={{
+                  flex: 1, padding: "8px 4px", borderRadius: 6, fontSize: 10, fontFamily: "'DM Sans', sans-serif", fontWeight: 600, cursor: "pointer",
+                  border: config.offeringMode === m.id ? "1px solid #C9A84C" : "1px solid #333",
+                  background: config.offeringMode === m.id ? "rgba(201, 168, 76, 0.1)" : "transparent",
+                  color: config.offeringMode === m.id ? "#C9A84C" : "#777",
+                }}
+              >
+                {m.label}
+              </button>
+            ))}
           </div>
-          {config.offeringImage && (
-            <div style={{ marginTop: 12 }}>
-              <img src={config.offeringImage} alt="Offering preview" style={{ maxWidth: "100%", borderRadius: 4, display: "block", border: "1px solid #333" }} />
-              <button onClick={() => update("offeringImage", null)} style={{ marginTop: 8, background: "transparent", color: "#C9A84C", border: "1px solid #333", borderRadius: 4, padding: "6px 10px", fontSize: 10, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>Remove Image</button>
+
+          {config.offeringMode === "image" && (
+            <div>
+              <label style={S.label}>Upload Image</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      processImageToHTML(reader.result, config.applyDKColors, (url, html) => {
+                        setConfig(prev => ({ ...prev, _rawOfferingImage: reader.result, offeringImage: url, offeringHtml: html }));
+                      });
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                style={{ ...S.input, padding: "8px 0" }}
+              />
+              <div style={{ fontSize: 9, color: "#888", marginTop: 6, lineHeight: 1.4 }}>
+                <strong>Recommended size:</strong> 1000 x 520px (or similar aspect ratio)<br />
+                <strong>Pro Tip:</strong> Upload an SVG file for Native HTML conversion!
+              </div>
+
+              {config.offeringImage && (
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                    <input
+                      type="checkbox"
+                      id="applyColors"
+                      checked={config.applyDKColors}
+                      onChange={(e) => {
+                        const apply = e.target.checked;
+                        update("applyDKColors", apply);
+                        if (config._rawOfferingImage) {
+                          processImageToHTML(config._rawOfferingImage, apply, (url, html) => {
+                            update("offeringImage", url);
+                            update("offeringHtml", html);
+                          });
+                        }
+                      }}
+                    />
+                    <label htmlFor="applyColors" style={{ fontSize: 11, cursor: "pointer", userSelect: "none" }}>Apply DotKonnekt Colors</label>
+                  </div>
+                  <img src={config.offeringImage} alt="Offering preview" style={{ maxWidth: "100%", borderRadius: 4, display: "block", border: "1px solid #333" }} />
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <button onClick={() => { update("offeringImage", null); update("offeringHtml", null); }} style={{ flex: 1, background: "transparent", color: "#ff4d4f", border: "1px solid #333", borderRadius: 4, padding: "6px 10px", fontSize: 10, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>Remove</button>
+                    <button onClick={() => update("offeringMode", "html")} style={{ flex: 2, background: "#C9A84C", color: "#1A1A1A", border: "none", borderRadius: 4, padding: "6px 10px", fontSize: 10, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>Edit as HTML</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {config.offeringMode === "html" && (
+            <div>
+              <div style={S.label}>Custom HTML Code</div>
+              <textarea
+                value={config.offeringHtml || ""}
+                onChange={(e) => update("offeringHtml", e.target.value)}
+                placeholder="<div style='display:flex;'>Your raw HTML grid or layout here...</div>"
+                style={{ ...S.input, minHeight: 160, fontFamily: "monospace", fontSize: 10, lineHeight: 1.4, resize: "vertical" }}
+              />
+              {config.offeringHtml && (
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(config.offeringHtml);
+                    alert("HTML copied to clipboard!");
+                  }}
+                  style={{ width: "100%", marginTop: 8, background: "#C9A84C", color: "#1A1A1A", border: "none", borderRadius: 4, padding: "8px 10px", fontSize: 10, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>
+                  Copy HTML Snippet
+                </button>
+              )}
+            </div>
+          )}
+
+          {config.offeringMode === "blocks" && (
+            <div>
+              <div style={{ fontSize: 10, color: "#aaa", marginBottom: 12 }}>Configure the 2x2 grid of text blocks.</div>
+              {config.offeringBlocks.map((b, i) => (
+                <div key={i} style={{ marginBottom: 12, padding: 10, background: "#111", borderRadius: 8, border: "1px solid #2a2a2a" }}>
+                  <div style={S.group}><label style={S.label}>Block {i + 1} Heading</label><input style={S.input} value={b.heading} onChange={e => update(`offeringBlocks.${i}.heading`, e.target.value)} /></div>
+                  <div style={{ ...S.group, marginBottom: 0 }}><label style={S.label}>Text Content</label><textarea style={{ ...S.input, minHeight: 46, resize: "vertical" }} value={b.text} onChange={e => update(`offeringBlocks.${i}.text`, e.target.value)} /></div>
+                </div>
+              ))}
             </div>
           )}
         </div>
