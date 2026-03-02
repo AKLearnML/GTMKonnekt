@@ -803,7 +803,7 @@ Our Offering
 
   const parseTextToConfig = (text) => {
     const getSection = (header) => {
-      const regex = new RegExp(`^${header}:\\s*\\n([\\s\\S]*?)(?=^([A-Z0-9 ]+):|\\$)`, "m");
+      const regex = new RegExp(`^${header}:\\s*([\\s\\S]*?)(?=^([A-Z0-9 ]+):|\\$)`, "m");
       const match = text.match(regex);
       return match ? match[1].trim() : "";
     };
