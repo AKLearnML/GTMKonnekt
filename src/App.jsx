@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
@@ -649,6 +649,14 @@ export default function App() {
   const [configTab, setConfigTab] = useState("basic");
   const [isExporting, setIsExporting] = useState(false);
 
+  // App View State
+  const [appView, setAppView] = useState("editor"); // "editor" | "saved_forms"
+
+  // Form Saving State
+  const [savedForms, setSavedForms] = useState([]);
+  const [activeFormId, setActiveFormId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState("");
@@ -656,6 +664,248 @@ export default function App() {
   const [authError, setAuthError] = useState("");
 
   const previewRef = useRef(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("dk_saved_forms");
+    if (stored) {
+      try {
+        setSavedForms(JSON.parse(stored));
+      } catch (e) {
+        console.error("Failed to parse saved forms", e);
+      }
+    }
+  }, []);
+
+  const handleSaveForm = () => {
+    const newForm = {
+      id: activeFormId || Date.now().toString(),
+      timestamp: Date.now(),
+      config: { ...config }
+    };
+
+    let updatedForms;
+    if (activeFormId) {
+      updatedForms = savedForms.map(f => f.id === activeFormId ? newForm : f);
+    } else {
+      updatedForms = [newForm, ...savedForms];
+      setActiveFormId(newForm.id);
+    }
+
+    setSavedForms(updatedForms);
+    localStorage.setItem("dk_saved_forms", JSON.stringify(updatedForms));
+    alert("Form saved successfully!");
+  };
+
+  const handleSaveAsCopy = () => {
+    const newForm = {
+      id: Date.now().toString(),
+      timestamp: Date.now(),
+      config: { ...config }
+    };
+
+    const updatedForms = [newForm, ...savedForms];
+    setActiveFormId(newForm.id);
+    setSavedForms(updatedForms);
+    localStorage.setItem("dk_saved_forms", JSON.stringify(updatedForms));
+    alert("Saved as new copy!");
+  };
+
+  const handleDeleteForm = (id) => {
+    if (confirm("Are you sure you want to delete this saved form?")) {
+      const updatedForms = savedForms.filter(f => f.id !== id);
+      setSavedForms(updatedForms);
+      localStorage.setItem("dk_saved_forms", JSON.stringify(updatedForms));
+      if (activeFormId === id) setActiveFormId(null);
+    }
+  };
+
+  const handleLoadForm = (form) => {
+    setConfig(form.config);
+    setActiveFormId(form.id);
+    setAppView("editor");
+  };
+
+  const handleDownloadTemplate = () => {
+    const templateText = `PROSPECT NAME:
+[Enter prospect name here]
+
+HEADLINE:
+Powering {prospect} to market leadership with AI
+
+SUBTITLE:
+A strategic partnership to accelerate AI-driven growth and category dominance.
+
+PILLAR 1 TITLE:
+[Enter pillar 1 title here]
+PILLAR 1 CAPABILITY 1:
+[Enter Capability 1 name]
+PILLAR 1 DESC 1:
+[Enter Capability 1 description]
+PILLAR 1 CAPABILITY 2:
+[Enter Capability 2 name]
+PILLAR 1 DESC 2:
+[Enter Capability 2 description]
+
+PILLAR 2 TITLE:
+[Enter pillar 2 title here]
+PILLAR 2 CAPABILITY 1:
+[Enter Capability 1 name]
+PILLAR 2 DESC 1:
+[Enter Capability 1 description]
+PILLAR 2 CAPABILITY 2:
+[Enter Capability 2 name]
+PILLAR 2 DESC 2:
+[Enter Capability 2 description]
+
+VALUE PROP 1 ICON:
+⚡
+VALUE PROP 1 TITLE:
+[Enter Value Prop 1 Title]
+VALUE PROP 1 DESC:
+[Enter Value Prop 1 Description]
+
+VALUE PROP 2 ICON:
+🎯
+VALUE PROP 2 TITLE:
+[Enter Value Prop 2 Title]
+VALUE PROP 2 DESC:
+[Enter Value Prop 2 Description]
+
+VALUE PROP 3 ICON:
+🏆
+VALUE PROP 3 TITLE:
+[Enter Value Prop 3 Title]
+VALUE PROP 3 DESC:
+[Enter Value Prop 3 Description]
+
+CTA TITLE:
+Next Step: 30-Minute Executive Briefing
+CTA DESC:
+Explore high-impact use cases and partnership options tailored for {prospect}.
+
+CLIENTS:
+David's Bridal · Wrangler · Lee · Dockers
+
+OFFERING TITLE:
+Our Offering
+`;
+
+    const blob = new Blob([templateText], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "1-pager-template.txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleUploadContent = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target.result;
+
+      // Simple parse logic reading block entries based on exact header matches
+      const getSection = (header) => {
+        const regex = new RegExp(`^${header}:\\s*\\n([\\s\\S]*?)(?=^([A-Z0-9 ]+):|\\$)`, "m");
+        const match = text.match(regex);
+        return match ? match[1].trim() : "";
+      };
+
+      const newConfig = { ...config };
+
+      const pName = getSection("PROSPECT NAME");
+      if (pName && pName !== "[Enter prospect name here]") newConfig.prospectName = pName;
+
+      const headline = getSection("HEADLINE");
+      if (headline) newConfig.headline = headline;
+
+      const subtitle = getSection("SUBTITLE");
+      if (subtitle) newConfig.subtitle = subtitle;
+
+      // Pillar 1
+      const p1Title = getSection("PILLAR 1 TITLE");
+      if (p1Title && p1Title !== "[Enter pillar 1 title here]") newConfig.pillar1.title = p1Title;
+
+      const p1c1 = getSection("PILLAR 1 CAPABILITY 1");
+      if (p1c1 && p1c1 !== "[Enter Capability 1 name]") newConfig.pillar1.items[0].name = p1c1;
+
+      const p1d1 = getSection("PILLAR 1 DESC 1");
+      if (p1d1 && p1d1 !== "[Enter Capability 1 description]") newConfig.pillar1.items[0].desc = p1d1;
+
+      const p1c2 = getSection("PILLAR 1 CAPABILITY 2");
+      if (p1c2 && p1c2 !== "[Enter Capability 2 name]") newConfig.pillar1.items[1].name = p1c2;
+
+      const p1d2 = getSection("PILLAR 1 DESC 2");
+      if (p1d2 && p1d2 !== "[Enter Capability 2 description]") newConfig.pillar1.items[1].desc = p1d2;
+
+      // Pillar 2
+      const p2Title = getSection("PILLAR 2 TITLE");
+      if (p2Title && p2Title !== "[Enter pillar 2 title here]") newConfig.pillar2.title = p2Title;
+
+      const p2c1 = getSection("PILLAR 2 CAPABILITY 1");
+      if (p2c1 && p2c1 !== "[Enter Capability 1 name]") newConfig.pillar2.items[0].name = p2c1;
+
+      const p2d1 = getSection("PILLAR 2 DESC 1");
+      if (p2d1 && p2d1 !== "[Enter Capability 1 description]") newConfig.pillar2.items[0].desc = p2d1;
+
+      const p2c2 = getSection("PILLAR 2 CAPABILITY 2");
+      if (p2c2 && p2c2 !== "[Enter Capability 2 name]") newConfig.pillar2.items[1].name = p2c2;
+
+      const p2d2 = getSection("PILLAR 2 DESC 2");
+      if (p2d2 && p2d2 !== "[Enter Capability 2 description]") newConfig.pillar2.items[1].desc = p2d2;
+
+      // Value Props
+      const vp1i = getSection("VALUE PROP 1 ICON");
+      if (vp1i) newConfig.valueProps[0].icon = vp1i;
+
+      const vp1t = getSection("VALUE PROP 1 TITLE");
+      if (vp1t && vp1t !== "[Enter Value Prop 1 Title]") newConfig.valueProps[0].title = vp1t;
+
+      const vp1d = getSection("VALUE PROP 1 DESC");
+      if (vp1d && vp1d !== "[Enter Value Prop 1 Description]") newConfig.valueProps[0].desc = vp1d;
+
+      const vp2i = getSection("VALUE PROP 2 ICON");
+      if (vp2i) newConfig.valueProps[1].icon = vp2i;
+
+      const vp2t = getSection("VALUE PROP 2 TITLE");
+      if (vp2t && vp2t !== "[Enter Value Prop 2 Title]") newConfig.valueProps[1].title = vp2t;
+
+      const vp2d = getSection("VALUE PROP 2 DESC");
+      if (vp2d && vp2d !== "[Enter Value Prop 2 Description]") newConfig.valueProps[1].desc = vp2d;
+
+      const vp3i = getSection("VALUE PROP 3 ICON");
+      if (vp3i) newConfig.valueProps[2].icon = vp3i;
+
+      const vp3t = getSection("VALUE PROP 3 TITLE");
+      if (vp3t && vp3t !== "[Enter Value Prop 3 Title]") newConfig.valueProps[2].title = vp3t;
+
+      const vp3d = getSection("VALUE PROP 3 DESC");
+      if (vp3d && vp3d !== "[Enter Value Prop 3 Description]") newConfig.valueProps[2].desc = vp3d;
+
+      // Misc
+      const ctaT = getSection("CTA TITLE");
+      if (ctaT) newConfig.cta.title = ctaT;
+
+      const ctaD = getSection("CTA DESC");
+      if (ctaD) newConfig.cta.desc = ctaD;
+
+      const clients = getSection("CLIENTS");
+      if (clients) newConfig.clients = clients;
+
+      const oTitle = getSection("OFFERING TITLE");
+      if (oTitle) newConfig.offeringTitle = oTitle;
+
+      setConfig(newConfig);
+      alert("Content imported successfully!");
+    };
+    reader.readAsText(file);
+    e.target.value = null; // reset input
+  };
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -709,7 +959,7 @@ export default function App() {
       const originalTitle = document.title;
       // Add a timestamp to the title so the downloaded file is unique and avoids macOS/browser PDF caching
       const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-      document.title = `${config.prospectName || "prospect"}-one-pager-${timestamp}`;
+      document.title = `${config.prospectName || "prospect"} - one - pager - ${timestamp}`;
       window.print();
       document.title = originalTitle;
       setIsExporting(false);
@@ -917,6 +1167,8 @@ export default function App() {
     <div id="app-container" style={{ fontFamily: "'DM Sans', sans-serif", background: "#0F0F0F", minHeight: "100vh", color: "#e0e0e0" }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
+
+
       {/* Nav */}
       <div className="no-print" style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(15,15,15,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(201,168,76,0.15)", padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -935,6 +1187,17 @@ export default function App() {
               </button>
             ))}
           </div>
+
+          <div style={{ height: 24, width: 1, background: "#333", margin: "0 8px" }}></div>
+
+          <button onClick={handleSaveForm} style={{ padding: "7px 14px", borderRadius: 6, fontSize: 11, fontWeight: 500, cursor: "pointer", border: "1px solid #333", fontFamily: "'DM Sans', sans-serif", background: "transparent", color: "#e0e0e0" }}>
+            Save
+          </button>
+          <button onClick={handleSaveAsCopy} style={{ padding: "7px 14px", borderRadius: 6, fontSize: 11, fontWeight: 500, cursor: "pointer", border: "1px solid #333", fontFamily: "'DM Sans', sans-serif", background: "transparent", color: "#e0e0e0" }}>
+            Save Copy
+          </button>
+          <div style={{ height: 24, width: 1, background: "#333", margin: "0 8px" }}></div>
+
           <button onClick={() => setPanelOpen(!panelOpen)} style={{ padding: "7px 14px", borderRadius: 6, fontSize: 11, fontWeight: 500, cursor: "pointer", border: "1px solid #333", fontFamily: "'DM Sans', sans-serif", background: panelOpen ? "rgba(201,168,76,0.1)" : "transparent", color: panelOpen ? "#C9A84C" : "#777" }}>
             {panelOpen ? "Hide Editor" : "Edit Content"}
           </button>
@@ -945,40 +1208,115 @@ export default function App() {
       </div>
 
       <div style={{ display: "flex" }}>
-        {/* Config Panel */}
+        {/* Left Menu Bar */}
         {panelOpen && (
           <div className="no-print" style={{ width: 320, flexShrink: 0, background: "#0a0a0a", borderRight: "1px solid #1a1a1a", height: "calc(100vh - 52px)", overflowY: "auto", position: "sticky", top: 52 }}>
-            <div style={{ padding: "12px 14px", borderBottom: "1px solid #1a1a1a", display: "flex", gap: 6 }}>
-              <button onClick={() => setConfig(DEFAULT_CONFIG)} style={{ flex: 1, padding: "6px 8px", borderRadius: 6, border: "1px solid #333", background: "transparent", color: "#C9A84C", fontSize: 10, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>Load FACES</button>
-              <button onClick={() => setConfig(EMPTY_CONFIG)} style={{ flex: 1, padding: "6px 8px", borderRadius: 6, border: "1px solid #333", background: "transparent", color: "#777", fontSize: 10, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>Start Blank</button>
-            </div>
-
             <div style={{ display: "flex", borderBottom: "1px solid #1a1a1a" }}>
-              {tabs.map(t => (
-                <button key={t.id} onClick={() => setConfigTab(t.id)} style={{ flex: 1, padding: "9px 6px", fontSize: 10, fontWeight: 500, cursor: "pointer", border: "none", fontFamily: "'DM Sans', sans-serif", background: configTab === t.id ? "#1a1a1a" : "transparent", color: configTab === t.id ? "#C9A84C" : "#555", borderBottom: configTab === t.id ? "2px solid #C9A84C" : "2px solid transparent" }}>
-                  {t.label}
-                </button>
-              ))}
+              <button onClick={() => setAppView("editor")} style={{ flex: 1, padding: "14px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer", border: "none", fontFamily: "'DM Sans', sans-serif", background: appView === "editor" ? "#111" : "transparent", color: appView === "editor" ? "#C9A84C" : "#777", borderBottom: appView === "editor" ? "2px solid #C9A84C" : "2px solid transparent" }}>
+                Active Editor
+              </button>
+              <button onClick={() => setAppView("saved_forms")} style={{ flex: 1, padding: "14px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer", border: "none", fontFamily: "'DM Sans', sans-serif", background: appView === "saved_forms" ? "#111" : "transparent", color: appView === "saved_forms" ? "#C9A84C" : "#777", borderBottom: appView === "saved_forms" ? "2px solid #C9A84C" : "2px solid transparent" }}>
+                Saved Templates
+              </button>
             </div>
 
-            <div style={{ padding: 14 }}>{renderTab()}</div>
+            {appView === "editor" && (
+              <>
+                <div style={{ padding: "12px 14px", borderBottom: "1px solid #1a1a1a", display: "flex", gap: 6 }}>
+                  <button onClick={() => { setConfig(DEFAULT_CONFIG); setActiveFormId(null); }} style={{ flex: 1, padding: "6px 8px", borderRadius: 6, border: "1px solid #333", background: "transparent", color: "#C9A84C", fontSize: 10, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>Load FACES</button>
+                  <button onClick={() => { setConfig(EMPTY_CONFIG); setActiveFormId(null); }} style={{ flex: 1, padding: "6px 8px", borderRadius: 6, border: "1px solid #333", background: "transparent", color: "#777", fontSize: 10, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>Start Blank</button>
+                </div>
+
+                <div style={{ padding: "10px 14px", borderBottom: "1px solid #1a1a1a", display: "flex", gap: 6, flexDirection: "column" }}>
+                  <div style={{ fontSize: 10, color: "#888", marginBottom: 4 }}>Content Import / Export</div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={handleDownloadTemplate} style={{ flex: 1, padding: "6px 8px", borderRadius: 6, border: "1px dashed #444", background: "transparent", color: "#aaa", fontSize: 10, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>↓ Get Template</button>
+                    <label style={{ flex: 1, padding: "6px 8px", borderRadius: 6, border: "1px dashed #C9A84C", background: "rgba(201,168,76,0.05)", color: "#C9A84C", fontSize: 10, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 500, textAlign: "center" }}>
+                      ↑ Upload Content
+                      <input type="file" accept=".txt" onChange={handleUploadContent} style={{ display: "none" }} />
+                    </label>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", borderBottom: "1px solid #1a1a1a" }}>
+                  {tabs.map(t => (
+                    <button key={t.id} onClick={() => setConfigTab(t.id)} style={{ flex: 1, padding: "9px 6px", fontSize: 10, fontWeight: 500, cursor: "pointer", border: "none", fontFamily: "'DM Sans', sans-serif", background: configTab === t.id ? "#1a1a1a" : "transparent", color: configTab === t.id ? "#C9A84C" : "#555", borderBottom: configTab === t.id ? "2px solid #C9A84C" : "2px solid transparent" }}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ padding: 14 }}>{renderTab()}</div>
+              </>
+            )}
+
+            {appView === "saved_forms" && (
+              <div style={{ padding: 14 }}>
+                <p style={{ fontSize: 11, color: "#888", marginBottom: 12, lineHeight: 1.5 }}>View, load, and manage your saved configurations.</p>
+                <input
+                  type="text"
+                  placeholder="Search by prospect name..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  style={{ width: "100%", padding: "10px 14px", borderRadius: 6, border: "1px solid #333", background: "#111", color: "#e0e0e0", fontSize: 12, outline: "none", boxSizing: "border-box", fontFamily: "'DM Sans', sans-serif" }}
+                />
+              </div>
+            )}
           </div>
         )}
 
-        {/* Preview */}
+        {/* Main Content Area */}
         <div style={{ flex: 1, display: "flex", justifyContent: "center", padding: "28px 16px 60px", overflowY: "auto" }}>
-          <div ref={previewRef} className="print-only" style={{
-            width: isExporting ? "722px" : 816, // Balanced width
-            transform: isExporting ? "scale(1.10)" : "none", // Scale up by 10%
-            transformOrigin: "top left",
-            boxShadow: isExporting ? "none" : "0 30px 80px rgba(0,0,0,0.5)",
-            borderRadius: isExporting ? 0 : 4,
-            overflow: "hidden"
-          }}>
-            {activeLayout === "a" && <LayoutA c={config} />}
-            {activeLayout === "b" && <LayoutB c={config} />}
-            {activeLayout === "c" && <LayoutC c={config} />}
-          </div>
+          {appView === "editor" ? (
+            <div ref={previewRef} className="print-only" style={{
+              width: isExporting ? "722px" : 816, // Balanced width
+              transform: isExporting ? "scale(1.10)" : "none", // Scale up by 10%
+              transformOrigin: "top left",
+              boxShadow: isExporting ? "none" : "0 30px 80px rgba(0,0,0,0.5)",
+              borderRadius: isExporting ? 0 : 4,
+              overflow: "hidden"
+            }}>
+              {activeLayout === "a" && <LayoutA c={config} />}
+              {activeLayout === "b" && <LayoutB c={config} />}
+              {activeLayout === "c" && <LayoutC c={config} />}
+            </div>
+          ) : (
+            <div style={{ width: "100%", maxWidth: 900, padding: "0 24px" }}>
+              <div style={{ marginBottom: 24, paddingBottom: 16, borderBottom: "1px solid #333" }}>
+                <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: "#C9A84C", fontFamily: "'Sora', sans-serif" }}>Saved Templates</h2>
+                <p style={{ color: "#888", fontSize: 14, margin: "8px 0 0" }}>Manage your saved configurations</p>
+              </div>
+
+              {savedForms.filter(f => (f.config.prospectName || "").toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
+                <div style={{ textAlign: "center", color: "#888", padding: "80px 0", background: "#111", borderRadius: 12, border: "1px dashed #333" }}>
+                  <p style={{ fontSize: 16, marginBottom: 8, fontWeight: 500, color: "#aaa" }}>No saved templates found</p>
+                  <p style={{ fontSize: 13, opacity: 0.7, margin: 0 }}>Save a configuration from the Editor to see it here.</p>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))", gap: 16 }}>
+                  {savedForms
+                    .filter(f => (f.config.prospectName || "").toLowerCase().includes(searchQuery.toLowerCase()))
+                    .map(form => (
+                      <div key={form.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 20, background: "#111", borderRadius: 10, border: "1px solid #333", transition: "all 0.2s" }}>
+                        <div>
+                          <div style={{ fontSize: 18, fontWeight: 600, color: "#e0e0e0", marginBottom: 6, fontFamily: "'Sora', sans-serif" }}>
+                            {form.config.prospectName || "Untitled Prospect"}
+                            {activeFormId === form.id && <span style={{ marginLeft: 10, fontSize: 10, background: "rgba(201,168,76,0.2)", color: "#C9A84C", padding: "3px 8px", borderRadius: 4, verticalAlign: "middle", fontWeight: 700 }}>ACTIVE</span>}
+                          </div>
+                          <div style={{ fontSize: 13, color: "#888" }}>
+                            Last saved: {new Date(form.timestamp).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: 10 }}>
+                          <button onClick={() => handleLoadForm(form)} style={{ padding: "8px 18px", background: "#C9A84C", color: "#1A1A1A", border: "none", borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>Load</button>
+                          <button onClick={() => handleDeleteForm(form.id)} style={{ padding: "8px 18px", background: "rgba(255,77,79,0.1)", color: "#ff4d4f", border: "1px solid rgba(255,77,79,0.3)", borderRadius: 6, fontSize: 13, fontWeight: 500, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>Delete</button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
