@@ -801,109 +801,143 @@ Our Offering
     URL.revokeObjectURL(url);
   };
 
-  const handleUploadContent = (e) => {
+  const parseTextToConfig = (text) => {
+    const getSection = (header) => {
+      const regex = new RegExp(`^${header}:\\s*\\n([\\s\\S]*?)(?=^([A-Z0-9 ]+):|\\$)`, "m");
+      const match = text.match(regex);
+      return match ? match[1].trim() : "";
+    };
+
+    const newConfig = { ...config };
+
+    const pName = getSection("PROSPECT NAME");
+    if (pName && pName !== "[Enter prospect name here]") newConfig.prospectName = pName;
+
+    const headline = getSection("HEADLINE");
+    if (headline) newConfig.headline = headline;
+
+    const subtitle = getSection("SUBTITLE");
+    if (subtitle) newConfig.subtitle = subtitle;
+
+    // Pillar 1
+    const p1Title = getSection("PILLAR 1 TITLE");
+    if (p1Title && p1Title !== "[Enter pillar 1 title here]") newConfig.pillar1.title = p1Title;
+
+    const p1c1 = getSection("PILLAR 1 CAPABILITY 1");
+    if (p1c1 && p1c1 !== "[Enter Capability 1 name]") newConfig.pillar1.items[0].name = p1c1;
+
+    const p1d1 = getSection("PILLAR 1 DESC 1");
+    if (p1d1 && p1d1 !== "[Enter Capability 1 description]") newConfig.pillar1.items[0].desc = p1d1;
+
+    const p1c2 = getSection("PILLAR 1 CAPABILITY 2");
+    if (p1c2 && p1c2 !== "[Enter Capability 2 name]") newConfig.pillar1.items[1].name = p1c2;
+
+    const p1d2 = getSection("PILLAR 1 DESC 2");
+    if (p1d2 && p1d2 !== "[Enter Capability 2 description]") newConfig.pillar1.items[1].desc = p1d2;
+
+    // Pillar 2
+    const p2Title = getSection("PILLAR 2 TITLE");
+    if (p2Title && p2Title !== "[Enter pillar 2 title here]") newConfig.pillar2.title = p2Title;
+
+    const p2c1 = getSection("PILLAR 2 CAPABILITY 1");
+    if (p2c1 && p2c1 !== "[Enter Capability 1 name]") newConfig.pillar2.items[0].name = p2c1;
+
+    const p2d1 = getSection("PILLAR 2 DESC 1");
+    if (p2d1 && p2d1 !== "[Enter Capability 1 description]") newConfig.pillar2.items[0].desc = p2d1;
+
+    const p2c2 = getSection("PILLAR 2 CAPABILITY 2");
+    if (p2c2 && p2c2 !== "[Enter Capability 2 name]") newConfig.pillar2.items[1].name = p2c2;
+
+    const p2d2 = getSection("PILLAR 2 DESC 2");
+    if (p2d2 && p2d2 !== "[Enter Capability 2 description]") newConfig.pillar2.items[1].desc = p2d2;
+
+    // Value Props
+    const vp1i = getSection("VALUE PROP 1 ICON");
+    if (vp1i) newConfig.valueProps[0].icon = vp1i;
+
+    const vp1t = getSection("VALUE PROP 1 TITLE");
+    if (vp1t && vp1t !== "[Enter Value Prop 1 Title]") newConfig.valueProps[0].title = vp1t;
+
+    const vp1d = getSection("VALUE PROP 1 DESC");
+    if (vp1d && vp1d !== "[Enter Value Prop 1 Description]") newConfig.valueProps[0].desc = vp1d;
+
+    const vp2i = getSection("VALUE PROP 2 ICON");
+    if (vp2i) newConfig.valueProps[1].icon = vp2i;
+
+    const vp2t = getSection("VALUE PROP 2 TITLE");
+    if (vp2t && vp2t !== "[Enter Value Prop 2 Title]") newConfig.valueProps[1].title = vp2t;
+
+    const vp2d = getSection("VALUE PROP 2 DESC");
+    if (vp2d && vp2d !== "[Enter Value Prop 2 Description]") newConfig.valueProps[1].desc = vp2d;
+
+    const vp3i = getSection("VALUE PROP 3 ICON");
+    if (vp3i) newConfig.valueProps[2].icon = vp3i;
+
+    const vp3t = getSection("VALUE PROP 3 TITLE");
+    if (vp3t && vp3t !== "[Enter Value Prop 3 Title]") newConfig.valueProps[2].title = vp3t;
+
+    const vp3d = getSection("VALUE PROP 3 DESC");
+    if (vp3d && vp3d !== "[Enter Value Prop 3 Description]") newConfig.valueProps[2].desc = vp3d;
+
+    // Misc
+    const ctaT = getSection("CTA TITLE");
+    if (ctaT) newConfig.cta.title = ctaT;
+
+    const ctaD = getSection("CTA DESC");
+    if (ctaD) newConfig.cta.desc = ctaD;
+
+    const clients = getSection("CLIENTS");
+    if (clients) newConfig.clients = clients;
+
+    const oTitle = getSection("OFFERING TITLE");
+    if (oTitle) newConfig.offeringTitle = oTitle;
+
+    setConfig(newConfig);
+    alert("Content imported successfully!");
+  };
+
+  const handleUploadContent = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target.result;
+    if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
+      try {
+        const fileReader = new FileReader();
+        fileReader.onload = async function () {
+          const typedarray = new Uint8Array(this.result);
 
-      // Simple parse logic reading block entries based on exact header matches
-      const getSection = (header) => {
-        const regex = new RegExp(`^${header}:\\s*\\n([\\s\\S]*?)(?=^([A-Z0-9 ]+):|\\$)`, "m");
-        const match = text.match(regex);
-        return match ? match[1].trim() : "";
+          // Dynamically import pdf.js to avoid bloating initial bundle if not used
+          const pdfjsLib = await import('pdfjs-dist/build/pdf.mjs');
+
+          // Set worker. (Path can vary depending on bundler, utilizing internal cdn or local)
+          pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
+          const pdf = await pdfjsLib.getDocument(typedarray).promise;
+          let fullText = "";
+
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            // Basic simplistic extraction, joining items with newlines
+            const pageStrings = textContent.items.map(item => item.str);
+            fullText += pageStrings.join("\\n") + "\\n";
+          }
+          parseTextToConfig(fullText);
+        };
+        fileReader.readAsArrayBuffer(file);
+      } catch (err) {
+        console.error("Error reading PDF", err);
+        alert("Failed to parse PDF.");
+      }
+    } else {
+      // Handles .txt and .md
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        parseTextToConfig(event.target.result);
       };
+      reader.readAsText(file);
+    }
 
-      const newConfig = { ...config };
-
-      const pName = getSection("PROSPECT NAME");
-      if (pName && pName !== "[Enter prospect name here]") newConfig.prospectName = pName;
-
-      const headline = getSection("HEADLINE");
-      if (headline) newConfig.headline = headline;
-
-      const subtitle = getSection("SUBTITLE");
-      if (subtitle) newConfig.subtitle = subtitle;
-
-      // Pillar 1
-      const p1Title = getSection("PILLAR 1 TITLE");
-      if (p1Title && p1Title !== "[Enter pillar 1 title here]") newConfig.pillar1.title = p1Title;
-
-      const p1c1 = getSection("PILLAR 1 CAPABILITY 1");
-      if (p1c1 && p1c1 !== "[Enter Capability 1 name]") newConfig.pillar1.items[0].name = p1c1;
-
-      const p1d1 = getSection("PILLAR 1 DESC 1");
-      if (p1d1 && p1d1 !== "[Enter Capability 1 description]") newConfig.pillar1.items[0].desc = p1d1;
-
-      const p1c2 = getSection("PILLAR 1 CAPABILITY 2");
-      if (p1c2 && p1c2 !== "[Enter Capability 2 name]") newConfig.pillar1.items[1].name = p1c2;
-
-      const p1d2 = getSection("PILLAR 1 DESC 2");
-      if (p1d2 && p1d2 !== "[Enter Capability 2 description]") newConfig.pillar1.items[1].desc = p1d2;
-
-      // Pillar 2
-      const p2Title = getSection("PILLAR 2 TITLE");
-      if (p2Title && p2Title !== "[Enter pillar 2 title here]") newConfig.pillar2.title = p2Title;
-
-      const p2c1 = getSection("PILLAR 2 CAPABILITY 1");
-      if (p2c1 && p2c1 !== "[Enter Capability 1 name]") newConfig.pillar2.items[0].name = p2c1;
-
-      const p2d1 = getSection("PILLAR 2 DESC 1");
-      if (p2d1 && p2d1 !== "[Enter Capability 1 description]") newConfig.pillar2.items[0].desc = p2d1;
-
-      const p2c2 = getSection("PILLAR 2 CAPABILITY 2");
-      if (p2c2 && p2c2 !== "[Enter Capability 2 name]") newConfig.pillar2.items[1].name = p2c2;
-
-      const p2d2 = getSection("PILLAR 2 DESC 2");
-      if (p2d2 && p2d2 !== "[Enter Capability 2 description]") newConfig.pillar2.items[1].desc = p2d2;
-
-      // Value Props
-      const vp1i = getSection("VALUE PROP 1 ICON");
-      if (vp1i) newConfig.valueProps[0].icon = vp1i;
-
-      const vp1t = getSection("VALUE PROP 1 TITLE");
-      if (vp1t && vp1t !== "[Enter Value Prop 1 Title]") newConfig.valueProps[0].title = vp1t;
-
-      const vp1d = getSection("VALUE PROP 1 DESC");
-      if (vp1d && vp1d !== "[Enter Value Prop 1 Description]") newConfig.valueProps[0].desc = vp1d;
-
-      const vp2i = getSection("VALUE PROP 2 ICON");
-      if (vp2i) newConfig.valueProps[1].icon = vp2i;
-
-      const vp2t = getSection("VALUE PROP 2 TITLE");
-      if (vp2t && vp2t !== "[Enter Value Prop 2 Title]") newConfig.valueProps[1].title = vp2t;
-
-      const vp2d = getSection("VALUE PROP 2 DESC");
-      if (vp2d && vp2d !== "[Enter Value Prop 2 Description]") newConfig.valueProps[1].desc = vp2d;
-
-      const vp3i = getSection("VALUE PROP 3 ICON");
-      if (vp3i) newConfig.valueProps[2].icon = vp3i;
-
-      const vp3t = getSection("VALUE PROP 3 TITLE");
-      if (vp3t && vp3t !== "[Enter Value Prop 3 Title]") newConfig.valueProps[2].title = vp3t;
-
-      const vp3d = getSection("VALUE PROP 3 DESC");
-      if (vp3d && vp3d !== "[Enter Value Prop 3 Description]") newConfig.valueProps[2].desc = vp3d;
-
-      // Misc
-      const ctaT = getSection("CTA TITLE");
-      if (ctaT) newConfig.cta.title = ctaT;
-
-      const ctaD = getSection("CTA DESC");
-      if (ctaD) newConfig.cta.desc = ctaD;
-
-      const clients = getSection("CLIENTS");
-      if (clients) newConfig.clients = clients;
-
-      const oTitle = getSection("OFFERING TITLE");
-      if (oTitle) newConfig.offeringTitle = oTitle;
-
-      setConfig(newConfig);
-      alert("Content imported successfully!");
-    };
-    reader.readAsText(file);
     e.target.value = null; // reset input
   };
 
@@ -1233,7 +1267,7 @@ Our Offering
                     <button onClick={handleDownloadTemplate} style={{ flex: 1, padding: "6px 8px", borderRadius: 6, border: "1px dashed #444", background: "transparent", color: "#aaa", fontSize: 10, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}>↓ Get Template</button>
                     <label style={{ flex: 1, padding: "6px 8px", borderRadius: 6, border: "1px dashed #C9A84C", background: "rgba(201,168,76,0.05)", color: "#C9A84C", fontSize: 10, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontWeight: 500, textAlign: "center" }}>
                       ↑ Upload Content
-                      <input type="file" accept=".txt" onChange={handleUploadContent} style={{ display: "none" }} />
+                      <input type="file" accept=".txt,.md,.pdf" onChange={handleUploadContent} style={{ display: "none" }} />
                     </label>
                   </div>
                 </div>
